@@ -5,14 +5,12 @@ use std::{
     ffi::OsStr,
     fs::File,
     io::{stdin, BufRead, BufReader},
-    path::PathBuf,
+    path::Path,
     process::Command,
     thread, time,
 };
 
-const EXTENSION: &'static str = "comfy";
-
-pub fn parse(file: &PathBuf, show_comments: bool) {
+pub fn parse(file: &str, show_comments: bool) {
     let os = consts::OS;
     let pattern = ">";
 
@@ -85,11 +83,11 @@ fn kword(line: &str, index: usize) -> bool {
     }
 }
 
-fn check_file(file: &PathBuf) -> bool {
-    if file.is_file() && file.extension() == Some(OsStr::new(EXTENSION)) {
+fn check_file(file: &str) -> bool {
+    if Path::new(file).is_file() && Path::new(file).extension() == Some(OsStr::new("comfy")) {
         true
-    } else if file.is_file() {
-        println!("{} is not a .comfy file, proceed? (y/N)", file.display());
+    } else if Path::new(file).is_file() {
+        println!("{} is not a .comfy file, proceed? (y/N)", file);
         let mut input = String::new();
 
         match stdin().read_line(&mut input) {
@@ -100,7 +98,7 @@ fn check_file(file: &PathBuf) -> bool {
             }
         }
     } else {
-        err_syntax(&format!("no such file named {}", file.display()));
+        err_syntax(&format!("no such file named {}", &file));
         false
     }
 }
