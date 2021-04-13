@@ -6,7 +6,7 @@
 
 Comfy allows you to write system independant scripts while minimizing code
 reproduction by allowing you to arbitrarily specialize sections of the script
-which are system dependant, while using cross platform code for sections that
+which are system dependant, while using cross-platform code for sections that
 are not.
 
 ```
@@ -47,12 +47,25 @@ Linux user here!
 Linux user here! x2
 ```
 
-
 ## Universal Functions
 
 *comfy* also has some *universal functions*, they work on any system regardless of the installed libraries. *comfy* comes with several packaged libraries, so far, we have the following *universal functions*:
 - @ sleep [int] (ms)
 - @ print [str] (text)
+
+## sysvar
+
+*sysvar* is a built-in function, it saves any value you want (updatable), so you can use it later.
+```
+# Hello world!
+@ print {sys}
+echo {sys}
+```
+Output should be:
+```
+Hello world!
+Hello world!
+```
 
 ## Basic Usage
 
@@ -64,8 +77,8 @@ working directory. If That file does not exist it will tell you so and exit.
 |------------------------|------------------------------------------------------------|
 | --help                 | Prints this message or the help of the given subcommand(s) |
 | --helpf                | Scripting help                                             |
-| run <run.comfy>        | Run a script                                               |
-| run <run.comfy> --c    | Show comments from source while running                    |
+| run <run.comfy>        | Runs a script                                              |
+| run <run.comfy> --c    | Shows comments from source while running                   |
 
 If you are on a unix-like system also have the option, with `cargo install`, to
 make the script itself runnable like so:

@@ -5,34 +5,43 @@ use std::{
     ffi::OsStr,
     fs::File,
     io::{stdin, BufRead, BufReader},
-    path::PathBuf,
+    path::Path,
     process::Command,
     thread, time,
 };
 
 const EXTENSION: &str = "comfy";
 
-pub fn parse(file: &PathBuf, show_comments: bool) {
+pub fn parse(file: &Path, show_comments: bool) {
     let os = consts::OS;
     let pattern = ">";
 
     if check_file(file) {
         let parse_file = File::open(file).unwrap();
         let parse_reader = BufReader::new(parse_file);
-        let mut line_os: String = "default".to_string();
+        let mut line_os: String = "always".to_string();
+        let mut _sysvar_contents: String = "undefined".to_string();
 
         for (index, line) in parse_reader.lines().enumerate() {
             let line = line.unwrap();
             let argument: Vec<&str> = line.split_whitespace().collect();
 
             if !line.is_empty() {
-                if !(argument[0] == "//" || line.trim().is_empty() || argument[0] == "@") {
+                if !(line.trim().is_empty()
+                    || argument[0] == "//"
+                    || argument[0] == "@"
+                    || argument[0] == "#")
+                {
                     if argument[0] == pattern {
                         line_os = argument[1].to_string();
                     } else if line_os == os || line_os == "always" {
-                        exe_line(index, &line, os);
+                        exe_line(index, &line, os, &_sysvar_contents);
                     }
-                } else if kword(&line, index) {
+                } else if sysvar(&line) != "false" {
+                    print_line(index, &line, "debug");
+                    let sys = sysvar(&line);
+                    _sysvar_contents = sys;
+                } else if kword(&line, index, &_sysvar_contents) {
                     // kword does everything
                 } else if show_comments {
                     print_line(index, &line, "sys");
@@ -53,7 +62,20 @@ pub fn parse(file: &PathBuf, show_comments: bool) {
     }
 }
 
-fn kword(line: &str, index: usize) -> bool {
+fn sysvar(line: &str) -> String {
+    let argument: Vec<&str> = line.split_whitespace().collect();
+    if argument[0] == "#" {
+        let mut var = "".to_owned();
+        for i in &argument[1..] {
+            var.push_str(&format!("{} ", i));
+        }
+        var
+    } else {
+        "false".to_string()
+    }
+}
+
+fn kword(line: &str, index: usize, _sysvar_contents: &str) -> bool {
     let argument: Vec<&str> = line.split_whitespace().collect();
     if argument[0] == "@" {
         match argument[1] {
@@ -74,7 +96,11 @@ fn kword(line: &str, index: usize) -> bool {
             "print" => {
                 print_line(index, &line, "non");
                 for i in &argument[2..] {
-                    print!("{} ", i);
+                    if i == &"{sys}" {
+                        print!("{} ", _sysvar_contents);
+                    } else {
+                        print!("{} ", i);
+                    }
                 }
                 println!();
                 true
@@ -92,7 +118,7 @@ fn kword(line: &str, index: usize) -> bool {
     }
 }
 
-fn check_file(file: &PathBuf) -> bool {
+fn check_file(file: &Path) -> bool {
     if file.is_file() && file.extension() == Some(OsStr::new(EXTENSION)) {
         true
     } else if file.is_file() {
@@ -110,17 +136,28 @@ fn check_file(file: &PathBuf) -> bool {
     }
 }
 
-fn exe_line(index: usize, line: &str, os: &str) {
+fn exe_line(index: usize, line: &str, os: &str, sysvar: &str) {
     print_line(index, &line, "sys");
+
+    let to_parse_command: Vec<&str> = line.split_whitespace().collect();
+    let mut to_exe = "".to_owned();
+    for i in &to_parse_command {
+        if i == &"{sys}" {
+            to_exe.push_str(&format!("{} ", &sysvar));
+        } else {
+            to_exe.push_str(&format!("{} ", i));
+        }
+    }
+
     if os == "windows" {
         Command::new("cmd")
-            .args(&["/C", &line])
+            .args(&["/C", &to_exe])
             .status()
             .unwrap_or_else(|_| panic!("err, line -> {}", &(index + 1)))
     } else {
         Command::new("sh")
             .arg("-c")
-            .arg(&line)
+            .arg(&to_exe)
             .status()
             .unwrap_or_else(|_| panic!("err, line -> {}", &(index + 1)))
     };
@@ -143,6 +180,16 @@ fn print_line(index: usize, line: &str, i: &str) {
             (index + 1).to_string().truecolor(150, 150, 150),
             ":".truecolor(150, 150, 150),
             line.truecolor(150, 150, 150)
+        );
+    }
+
+    if i == "debug" {
+        println!(
+            "{}{} {}{}",
+            (index + 1).to_string().truecolor(150, 150, 150),
+            ":".truecolor(150, 150, 150),
+            line.truecolor(150, 150, 150),
+            " [sysvar updated]".truecolor(150, 150, 150),
         );
     }
 }

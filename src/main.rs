@@ -51,5 +51,7 @@ fn print_helpf() {
     println!("  @[space]function         is how you call a function       ");
     println!("  sleep [int]              sleeps your program for [int] ms ");
     println!("  print [str]              prints given text                ");
+    println!("  # [str]                  saves a variable in the sysvar   ");
+    println!("  print {{sys}}            prints sysvar                  ");
     println!();
 }
