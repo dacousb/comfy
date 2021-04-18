@@ -28,6 +28,13 @@ enum Command {
         #[structopt(short, long = "c")]
         comments: bool,
     },
+
+    /// Formats a script
+    #[structopt(name = "fmt")]
+    Fmt {
+        /// Path to Comfy Script to format
+        path: PathBuf,
+    },
 }
 
 fn main() {
@@ -38,6 +45,7 @@ fn main() {
         comments: false,
     }) {
         Command::HelpF => print_helpf(),
+        Command::Fmt { path } => base::formater(&path),
         Command::Run { file, comments } => base::parse(
             &file.unwrap_or_else(|| PathBuf::from(DEFAULT_SCRIPT)),
             comments,
@@ -48,10 +56,12 @@ fn main() {
 fn print_helpf() {
     println!("comfy {}", env!("CARGO_PKG_VERSION"));
     println!();
-    println!("  @[space]function         is how you call a function       ");
-    println!("  sleep [int]              sleeps your program for [int] ms ");
-    println!("  print [str]              prints given text                ");
-    println!("  # [str]                  saves a variable in the sysvar   ");
-    println!("  print {{sys}}            prints sysvar                  ");
+    println!("  @[space]function           is how you call a function                   ");
+    println!();
+    println!("  @ sleep [int]              sleeps your program for [int] ms             ");
+    println!("  @ print [str]              prints given text                            ");
+    println!("  # [str]                    saves a variable in the sysvar               ");
+    println!("  #-> [cmd]                  saves the output of a command in the sysvar  ");
+    println!("  @ print {{sys}}              prints sysvar                                ");
     println!();
 }

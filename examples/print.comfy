@@ -1,0 +1,8 @@
+# Hello!
+echo {sys}
+#-> echo Line 1 & echo. & echo line 3
+echo {sys}
+// if you want to print {sys} contents, use @ print since it prints several lines
+// echo {sys} will execute the command (but the contents are sth\nsth) so it will
+// only execute everything before the first \n
+@ print {sys}

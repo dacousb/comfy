@@ -11,6 +11,7 @@ use std::{
 };
 
 const EXTENSION: &str = "comfy";
+const SYS: &str = "{sys}";
 
 pub fn parse(file: &Path, show_comments: bool) {
     let os = consts::OS;
@@ -30,16 +31,17 @@ pub fn parse(file: &Path, show_comments: bool) {
                 if !(line.trim().is_empty()
                     || argument[0] == "//"
                     || argument[0] == "@"
-                    || argument[0] == "#")
+                    || argument[0] == "#"
+                    || argument[0] == "#->")
                 {
                     if argument[0] == pattern {
                         line_os = argument[1].to_string();
                     } else if line_os == os || line_os == "always" {
                         exe_line(index, &line, os, &_sysvar_contents);
                     }
-                } else if sysvar(&line) != "false" {
+                } else if sysvar(&line, 0) != "false" {
                     print_line(index, &line, "debug");
-                    let sys = sysvar(&line);
+                    let sys = sysvar(&line, 1);
                     _sysvar_contents = sys;
                 } else if kword(&line, index, &_sysvar_contents) {
                     // kword does everything
@@ -62,17 +64,54 @@ pub fn parse(file: &Path, show_comments: bool) {
     }
 }
 
-fn sysvar(line: &str) -> String {
+fn sysvar(line: &str, num: u8) -> String {
     let argument: Vec<&str> = line.split_whitespace().collect();
     if argument[0] == "#" {
         let mut var = "".to_owned();
         for i in &argument[1..] {
             var.push_str(&format!("{} ", i));
         }
+        var.pop();
         var
+    } else if argument[0] == "#->" {
+        if num == 1 {
+            result_exe_line(line)
+        } else {
+            "result_exe_line".to_string()
+        }
     } else {
         "false".to_string()
     }
+}
+
+fn result_exe_line(line: &str) -> String {
+    let argument: Vec<&str> = line.split_whitespace().collect();
+    let mut to_exe = "".to_owned();
+    for i in &argument[1..] {
+        to_exe.push_str(&format!("{} ", i));
+    }
+    to_exe.pop();
+
+    let output = if cfg!(target_os = "windows") {
+        Command::new("cmd")
+            .args(&["/C", &to_exe])
+            .output()
+            .expect("failed to execute process")
+    } else {
+        Command::new("sh")
+            .arg("-c")
+            .arg(&to_exe)
+            .output()
+            .expect("failed to execute process")
+    };
+    let mut result = String::from_utf8(output.stdout).unwrap();
+    if result.ends_with('\n') {
+        result.pop();
+        if result.ends_with('\r') {
+            result.pop();
+        }
+    }
+    result
 }
 
 fn kword(line: &str, index: usize, _sysvar_contents: &str) -> bool {
@@ -96,7 +135,7 @@ fn kword(line: &str, index: usize, _sysvar_contents: &str) -> bool {
             "print" => {
                 print_line(index, &line, "non");
                 for i in &argument[2..] {
-                    if i == &"{sys}" {
+                    if i == &SYS {
                         print!("{} ", _sysvar_contents);
                     } else {
                         print!("{} ", i);
@@ -118,7 +157,7 @@ fn kword(line: &str, index: usize, _sysvar_contents: &str) -> bool {
     }
 }
 
-fn check_file(file: &Path) -> bool {
+pub fn check_file(file: &Path) -> bool {
     if file.is_file() && file.extension() == Some(OsStr::new(EXTENSION)) {
         true
     } else if file.is_file() {
@@ -142,7 +181,7 @@ fn exe_line(index: usize, line: &str, os: &str, sysvar: &str) {
     let to_parse_command: Vec<&str> = line.split_whitespace().collect();
     let mut to_exe = "".to_owned();
     for i in &to_parse_command {
-        if i == &"{sys}" {
+        if i == &SYS {
             to_exe.push_str(&format!("{} ", &sysvar));
         } else {
             to_exe.push_str(&format!("{} ", i));
@@ -189,7 +228,7 @@ fn print_line(index: usize, line: &str, i: &str) {
             (index + 1).to_string().truecolor(150, 150, 150),
             ":".truecolor(150, 150, 150),
             line.truecolor(150, 150, 150),
-            " [sysvar updated]".truecolor(150, 150, 150),
+            " (sysvar updated)".truecolor(150, 150, 150),
         );
     }
 }

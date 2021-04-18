@@ -66,17 +66,29 @@ Output should be:
 Hello world!
 Hello world!
 ```
+Another example (Windows):
+```
+# Hello!
+echo {sys}
+#-> echo Line 1 & echo. & echo line 3
+echo {sys}
+// if you want to print {sys} contents, use @ print since it prints several lines
+// echo {sys} will execute the command (but the contents are sth\nsth) so it will
+// only execute everything before the first \n
+@ print {sys}
+```
 
 ## Basic Usage
 
 By defaut *comfy* will try to run a script named `run.comfy` in your current
-working directory. If That file does not exist it will tell you so and exit.
+working directory. If that file does not exist it will tell you so and exit.
 *comfy* has the following command line arguments:
 
 | Command                | Use                                                        |
 |------------------------|------------------------------------------------------------|
 | --help                 | Prints this message or the help of the given subcommand(s) |
 | --helpf                | Scripting help                                             |
+| fmt <whatever.comfy>   | Formats a script                                           |
 | run <run.comfy>        | Runs a script                                              |
 | run <run.comfy> --c    | Shows comments from source while running                   |
 
