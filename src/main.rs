@@ -56,12 +56,21 @@ fn main() {
 fn print_helpf() {
     println!("comfy {}", env!("CARGO_PKG_VERSION"));
     println!();
-    println!("  @[space]function           is how you call a function                   ");
-    println!();
+    println!("  functions:                                                              ");
     println!("  @ sleep [int]              sleeps your program for [int] ms             ");
     println!("  @ print [str]              prints given text                            ");
+    println!();
+    println!("  sysvar:                                                                 ");
     println!("  # [str]                    saves a variable in the sysvar               ");
     println!("  #-> [cmd]                  saves the output of a command in the sysvar  ");
-    println!("  @ print {{sys}}              prints sysvar                                ");
+    println!();
+    println!("  conditional clauses:                                                    ");
+    println!("  _if [str] = [str]          if true, executes everything until _endif    ");
+    println!("            ├!=                                                           ");
+    println!("            └contains                                                     ");
+    println!("  _endif                     exits the if conditional clause              ");
+    println!();
+    println!("  examples:                                                               ");
+    println!("  @ print {{sys}}              prints sysvar                              ");
     println!();
 }

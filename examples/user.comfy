@@ -1,7 +1,9 @@
 > linux
 echo Linux user here!
+@ print Linux!
 > windows
 echo Windows user here!
+@ print Windows!
 > linux
 echo Linux user here! x2
 > windows

@@ -1,6 +1,6 @@
 [package]
 name = "comfy"
-version = "0.5.3-beta"
+version = "0.5.4-beta"
 authors = ["daCoUSB"]
 edition = "2018"
 

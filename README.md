@@ -53,7 +53,7 @@ Linux user here! x2
 - @ sleep [int] (ms)
 - @ print [str] (text)
 
-## sysvar
+## *sysvar*
 
 *sysvar* is a built-in function, it saves any value you want (updatable), so you can use it later.
 ```
@@ -76,6 +76,26 @@ echo {sys}
 // echo {sys} will execute the command (but the contents are sth\nsth) so it will
 // only execute everything before the first \n
 @ print {sys}
+```
+
+## Conditional clauses
+
+*comfy* also allows you to introduce simple conditional logics in your scripts (for strings, you just can use one argument (`_if Hello world = Hello world` is not valid), use `contains` as an alternative)
+```
+#-> echo 1
+_if {sys} = 1
+@ print Hey!
+_endif
+```
+```
+_if test != other
+@ print Nope!
+_endif
+```
+```
+_if 123 contains 2
+@ print Hey x2!
+_endif
 ```
 
 ## Basic Usage

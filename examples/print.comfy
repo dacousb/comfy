@@ -6,3 +6,4 @@ echo {sys}
 // echo {sys} will execute the command (but the contents are sth\nsth) so it will
 // only execute everything before the first \n
 @ print {sys}
+@ print Hello \n New line!

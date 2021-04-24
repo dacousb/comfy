@@ -1,0 +1,13 @@
+#-> echo 1
+_if {sys} = 1
+@ print Hey!
+_endif
+_if test != other
+@ print Nope!
+_endif
+_if 123 contains 2
+@ print Hey x2!
+_endif
+_if 1 = 2
+@ print NO!
+_endif

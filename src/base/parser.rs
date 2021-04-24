@@ -12,59 +12,105 @@ use std::{
 
 const EXTENSION: &str = "comfy";
 const SYS: &str = "{sys}";
+const PATTERN: &str = ">";
 
 pub fn parse(file: &Path, show_comments: bool) {
     let os = consts::OS;
-    let pattern = ">";
 
     if check_file(file) {
         let parse_file = File::open(file).unwrap();
         let parse_reader = BufReader::new(parse_file);
         let mut line_os: String = "always".to_string();
         let mut _sysvar_contents: String = "undefined".to_string();
+        let mut if_true = true;
+        let mut inside_if = false;
 
         for (index, line) in parse_reader.lines().enumerate() {
             let line = line.unwrap();
             let argument: Vec<&str> = line.split_whitespace().collect();
+            let mut m_argument = argument.to_owned();
 
-            if !line.is_empty() {
-                if !(line.trim().is_empty()
-                    || argument[0] == "//"
-                    || argument[0] == "@"
-                    || argument[0] == "#"
-                    || argument[0] == "#->")
-                {
-                    if argument[0] == pattern {
-                        line_os = argument[1].to_string();
-                    } else if line_os == os || line_os == "always" {
-                        exe_line(index, &line, os, &_sysvar_contents);
-                    }
-                } else if sysvar(&line, 0) != "false" {
-                    print_line(index, &line, "debug");
-                    let sys = sysvar(&line, 1);
-                    _sysvar_contents = sys;
-                } else if kword(&line, index, &_sysvar_contents) {
-                    // kword does everything
-                } else if show_comments {
+            if !line.trim().is_empty() && argument[0] == PATTERN {
+                line_os = argument[1].to_string();
+            } else if line_os == os || line_os == "always" {
+                if !line.trim().is_empty() && argument[0] == "_endif" {
                     print_line(index, &line, "sys");
-                } else if &line[..2] != "//" {
+                    if_true = true;
+                    inside_if = false;
+                } else if !line.trim().is_empty() && if_true {
+                    match argument[0] {
+                        "_if" => {
+                            if argument.len() == 4 {
+                                if inside_if {
+                                    err_syntax!(&format!(
+                                    "syntax, line {} -> {} nested if_ is illegal, use _endif before starting another comparison",
+                                    &(index + 1),
+                                    &line.italic()
+                                ));
+                                }
+                                print_line(index, &line, "sys");
+                                for (i, l) in argument.iter().enumerate() {
+                                    if l == &SYS {
+                                        m_argument[i] = &_sysvar_contents;
+                                    }
+                                }
+                                inside_if = true;
+                                if_true = compare(m_argument);
+                            } else {
+                                err_syntax!(&format!(
+                                    "syntax, line {} -> {} must follow the syntax x [comparison] x",
+                                    &(index + 1),
+                                    &line.italic()
+                                ));
+                            }
+                        }
+                        "_endif" => {
+                            print_line(index, &line, "sys");
+                            inside_if = false;
+                        }
+                        "#" | "#->" => {
+                            print_line(index, &line, "debug");
+                            _sysvar_contents = sysvar(&line);
+                        }
+                        "//" => {
+                            if show_comments {
+                                print_line(index, &line, "sys");
+                            }
+                        }
+                        "@" => {
+                            kword(&line, index, &_sysvar_contents);
+                        }
+                        _ => {
+                            exe_line(index, &line, os, &_sysvar_contents);
+                        }
+                    }
+                } else if !inside_if || if_true {
                     warning!(&format!(
-                        "syntax, line {} -> {} parser does not recognize it",
-                        &(index + 1),
-                        &line
+                        "syntax, line {} -> blank lines can originate errors",
+                        &(index + 1)
                     ));
                 }
-            } else {
-                warning!(&format!(
-                    "syntax, line {} -> blank lines can originate errors",
-                    &(index + 1)
-                ));
             }
         }
     }
 }
 
-fn sysvar(line: &str, num: u8) -> String {
+fn compare(m_argument: Vec<&str>) -> bool {
+    if m_argument[2] == "=" {
+        m_argument[1] == m_argument[3]
+    } else if m_argument[2] == "!=" {
+        m_argument[1] != m_argument[3]
+    } else if m_argument[2] == "contains" {
+        m_argument[1].contains(m_argument[3])
+    } else {
+        err_syntax!(format!(
+            "malformed _if statement -> you cannot compare with {}",
+            m_argument[2]
+        ));
+    }
+}
+
+fn sysvar(line: &str) -> String {
     let argument: Vec<&str> = line.split_whitespace().collect();
     if argument[0] == "#" {
         let mut var = "".to_owned();
@@ -74,13 +120,9 @@ fn sysvar(line: &str, num: u8) -> String {
         var.pop();
         var
     } else if argument[0] == "#->" {
-        if num == 1 {
-            result_exe_line(line)
-        } else {
-            "result_exe_line".to_string()
-        }
+        result_exe_line(line)
     } else {
-        "false".to_string()
+        "undefined".to_string()
     }
 }
 
@@ -114,46 +156,42 @@ fn result_exe_line(line: &str) -> String {
     result
 }
 
-fn kword(line: &str, index: usize, _sysvar_contents: &str) -> bool {
+fn kword(line: &str, index: usize, _sysvar_contents: &str) {
     let argument: Vec<&str> = line.split_whitespace().collect();
-    if argument[0] == "@" {
-        match argument[1] {
-            "sleep" => {
-                print_line(index, &line, "non");
-                if !argument[2].chars().all(char::is_numeric) {
-                    err_syntax!(&format!(
-                        "syntax error, line {} -> {} is not [int]",
-                        &(index + 1),
-                        &argument[2]
-                    ));
-                }
-                thread::sleep(time::Duration::from_millis(
-                    (argument[2]).parse::<u64>().unwrap(),
-                ));
-                true
-            }
-            "print" => {
-                print_line(index, &line, "non");
-                for i in &argument[2..] {
-                    if i == &SYS {
-                        print!("{} ", _sysvar_contents);
-                    } else {
-                        print!("{} ", i);
-                    }
-                }
-                println!();
-                true
-            }
-            _ => {
+    match argument[1] {
+        "sleep" => {
+            print_line(index, &line, "non");
+            if !argument[2].chars().all(char::is_numeric) {
                 err_syntax!(&format!(
-                    "syntax error, line {} -> {} is not a comfy function",
+                    "syntax error, line {} -> {} is not [int]",
                     &(index + 1),
-                    &argument[1]
+                    &argument[2].italic()
                 ));
             }
+            thread::sleep(time::Duration::from_millis(
+                (argument[2]).parse::<u64>().unwrap(),
+            ));
         }
-    } else {
-        false
+        "print" => {
+            print_line(index, &line, "non");
+            for i in &argument[2..] {
+                if i == &SYS {
+                    print!("{} ", _sysvar_contents);
+                } else if i == &"\\n" {
+                    println!();
+                } else {
+                    print!("{} ", i);
+                }
+            }
+            println!();
+        }
+        _ => {
+            err_syntax!(&format!(
+                "syntax error, line {} -> {} is not a comfy function",
+                &(index + 1),
+                &argument[1].italic()
+            ));
+        }
     }
 }
 
@@ -187,6 +225,7 @@ fn exe_line(index: usize, line: &str, os: &str, sysvar: &str) {
             to_exe.push_str(&format!("{} ", i));
         }
     }
+    to_exe.pop();
 
     if os == "windows" {
         Command::new("cmd")
@@ -210,25 +249,23 @@ fn print_line(index: usize, line: &str, i: &str) {
             ":".truecolor(150, 150, 150),
             line.truecolor(150, 150, 150)
         );
-    }
-
-    if i == "non" {
-        // other color
+    } else if i == "non" {
         println!(
-            "{}{} {}",
+            "{}{} {} {}",
             (index + 1).to_string().truecolor(150, 150, 150),
             ":".truecolor(150, 150, 150),
-            line.truecolor(150, 150, 150)
+            line.truecolor(150, 150, 150),
+            "-> comfy".truecolor(150, 150, 150)
         );
-    }
-
-    if i == "debug" {
+    } else if i == "debug" {
         println!(
             "{}{} {}{}",
             (index + 1).to_string().truecolor(150, 150, 150),
             ":".truecolor(150, 150, 150),
             line.truecolor(150, 150, 150),
-            " (sysvar updated)".truecolor(150, 150, 150),
+            " (sysvar updated)".truecolor(150, 150, 150)
         );
+    } else {
+        warning!("comfy internal error -> print_line");
     }
 }
