@@ -80,7 +80,7 @@ echo {sys}
 
 ## Conditional clauses
 
-*comfy* also allows you to introduce simple conditional logics in your scripts (for strings, you just can use one argument (`_if Hello world = Hello world` is not valid), use `contains` as an alternative)
+*comfy* also allows you to introduce simple conditional logics in your scripts (for strings, you just can use one argument (`_if Hello world = Hello world` is not valid), use `contains` as an alternative). Example:
 ```
 #-> echo 1
 _if {sys} = 1
