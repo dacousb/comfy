@@ -43,7 +43,7 @@ pub fn parse(file: &Path, show_comments: bool) {
                             if argument.len() == 4 {
                                 if inside_if {
                                     err_syntax!(&format!(
-                                    "syntax, line {} -> {} nested if_ is illegal, use _endif before starting another comparison",
+                                    "syntax, line {} -> {} nested _if is illegal, use _endif before starting another comparison",
                                     &(index + 1),
                                     &line.italic()
                                 ));
