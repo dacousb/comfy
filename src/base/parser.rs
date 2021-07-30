@@ -160,7 +160,7 @@ fn kword(line: &str, index: usize, _sysvar_contents: &str) {
     let argument: Vec<&str> = line.split_whitespace().collect();
     match argument[1] {
         "sleep" => {
-            print_line(index, &line, "non");
+            print_line(index, line, "non");
             if !argument[2].chars().all(char::is_numeric) {
                 err_syntax!(&format!(
                     "syntax error, line {} -> {} is not [int]",
@@ -173,7 +173,7 @@ fn kword(line: &str, index: usize, _sysvar_contents: &str) {
             ));
         }
         "print" => {
-            print_line(index, &line, "non");
+            print_line(index, line, "non");
             for i in &argument[2..] {
                 if i == &SYS {
                     print!("{} ", _sysvar_contents);
@@ -214,7 +214,7 @@ pub fn check_file(file: &Path) -> bool {
 }
 
 fn exe_line(index: usize, line: &str, os: &str, sysvar: &str) {
-    print_line(index, &line, "sys");
+    print_line(index, line, "sys");
 
     let to_parse_command: Vec<&str> = line.split_whitespace().collect();
     let mut to_exe = "".to_owned();
