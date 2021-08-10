@@ -124,7 +124,7 @@ which comfy
 ```
 
 You can then write your script. Replace `comfy` in the example below (on the first
-line) with the installation loation noted before.
+line) with the installation location noted before.
 
 ```bash
 #!comfy run
